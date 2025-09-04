@@ -1,0 +1,32 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_LEFT_RIGHT()
+
+title Контекст: Ставки для кол-центров (MVP)
+
+Person(CallOp, "Оператор кол-центра банка", "Консультирует по ставкам")
+Person_Ext(PartnerOp, "Оператор партнёрского кол-центра", "Консультирует по ставкам")
+Person(BackOffice, "Бэк-офис депозитов", "Поддерживает ставки")
+
+System_Boundary(Bank, "Банк") {
+  System(IB, "Интернет-банк", "Показывает ставки клиентам")
+  System(Website, "Сайт", "Показывает ставки клиентам")
+  System(CallCenter, "Call-center system", "UI для операторов")
+  System(PriceAPI, "Сервис ставок (Read)", "Кэш/чтение ставок")
+  System(Exporter, "Экспортёр ставок", "Формирует и шифрует файл")
+}
+
+System_Ext(PartnerCC, "Система партнёрского кол-центра", "Внешняя система")
+
+Rel(BackOffice, PriceAPI, "Обновление/публикация ставок")
+Rel(PriceAPI, CallCenter, "Чтение ставок", "HTTPS/TLS")
+Rel(PriceAPI, IB, "Чтение ставок", "HTTPS/TLS")
+Rel(PriceAPI, Website, "Чтение ставок", "HTTPS/TLS")
+Rel(Exporter, PartnerCC, "Файл CSV/XLSX (защищённый)")
+Rel(CallOp, CallCenter, "Просмотр ставок")
+Rel(PartnerOp, PartnerCC, "Просмотр ставок")
+
+@enduml
+
+
