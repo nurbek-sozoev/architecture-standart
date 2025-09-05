@@ -1,0 +1,69 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_LEFT_RIGHT()
+title Контейнеры: Открытие депозитов онлайн (MVP)
+
+Person_Ext(NewCustomer, "Новый клиент")
+Person(ExistingCustomer, "Действующий клиент")
+Person(BackOffice, "Менеджер бэк-офиса")
+Person(CallOperator, "Оператор call-центра")
+Person_Ext(Telecom, "Телеком-оператор")
+
+System_Boundary(Bank, "Банк") {
+  ' Сайт
+  Container(Website, "Сайт", "Next.js/SPA", "Каталог депозитов, форма заявки")
+
+  ' Интернет-банк (детализация)
+  System_Boundary(IB, "Интернет-банк") {
+    Container(IB_UI, "ИБ Web UI", "SPA", "Каталог, персональные ставки, оформление заявки")
+    Container(IB_API, "ИБ API Gateway", "Java/.NET", "Авторизация, маршрутизация, rate limiting")
+    Container(DepositSvc, "Сервис депозитов", "Java/.NET", "Приём заявок, статусы, интеграция с АБС")
+    ContainerDb(IB_DB, "ИБ DB", "MS SQL/Oracle", "Заявки, статусы, кэш справочников")
+    Container(OTPModule, "OTP/SMS клиент", "Lib", "Вызовы СМС-шлюза для OTP")
+    
+    Rel(IB_UI, IB_API, "HTTPS")
+    Rel(IB_API, DepositSvc, "HTTPS")
+    Rel(DepositSvc, IB_DB, "SQL")
+    Rel(IB_API, OTPModule, "OTP")
+  }
+
+  ' Call-center system
+  Container(CallCenter, "Call-center system", "COTS", "Обработка лидов, особые условия")
+
+  ' АБС (детализация)
+  System_Boundary(CoreBank, "АБС") {
+    Container(CoreAPI, "Core API/ESB", "SOAP/REST", "Приём заявок, статусы")
+    Container(SMSCore, "СМС-модуль", "Service", "Отправка уведомлений")
+    Container(CoreUIModule, "АБС WebUI", "SPA", "UI для АБС")
+    ContainerDb(CoreDB, "АБС DB", "Oracle", "Договоры, счета, операции")
+    Rel(CoreAPI, CoreDB, "SQL")
+  }
+
+  ' Интеграционные элементы
+  Container(Queue, "Очередь/Шлюз", "Adapter", "Асинхронный буфер между ИБ и АБС")
+  Container(SMSGateway, "СМС-шлюз", "Service", "Отправка СМС")
+}
+
+' Взаимодействия (Use Cases coverage)
+Rel(NewCustomer, Website, "Заявка")
+Rel(Website, CallCenter, "Лид")
+
+Rel(ExistingCustomer, IB_UI, "Заявка")
+Rel(IB_API, Queue, "Постановка заявки")
+Rel(CoreAPI, Queue, "События")
+Rel(Queue, CoreAPI, "События")
+Rel_Back(Queue, DepositSvc, "Cтатус")
+
+Rel(IB_API, SMSGateway, "OTP")
+Rel(CoreAPI, SMSCore, "СМС")
+Rel(SMSCore, SMSGateway, "Отправка СМС")
+Rel(SMSGateway, Telecom, "Передача СМС")
+
+Rel(BackOffice, CoreUIModule, "Подтверждение")
+Rel(CoreUIModule, CoreAPI, "Подтверждение")
+Rel(CallOperator, CallCenter, "Обработка лидов")
+
+@enduml
+
+

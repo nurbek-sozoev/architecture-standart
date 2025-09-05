@@ -1,0 +1,43 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_LEFT_RIGHT()
+
+title Контекст: Открытие депозитов онлайн (MVP)
+
+Person_Ext(NewCustomer, "Новый клиент", "Подаёт заявку на сайте")
+Person(ExistingCustomer, "Действующий клиент", "Оформляет депозит в интернет-банке")
+System_Ext(Telecom, "Телеком-оператор", "Доставка СМС клиентам")
+Person(CallOperator, "Оператор call-центра", "Обрабатывает заявки и звонит клиентам")
+Person(BackOffice, "Менеджер бэк-офиса", "Подтверждает условия и открытие депозита")
+
+System_Boundary(Bank, "Банк") {
+   System(SMSGateway, "СМС-шлюз", "Отправка СМС")
+   System(Website, "Сайт банка", "Публикация ставок, форма заявки")
+   System(IB, "Интернет-банк", "Персональные ставки, подача заявки, СМС-OTP")
+   System(CallCenter, "Call-center system", "Обработка лидов и условий")
+   System(CoreBank, "АБС", "Открытие депозитов, договоры, статусы")
+}
+
+Rel(Telecom, ExistingCustomer, "SMS")
+Rel(Telecom, NewCustomer, "SMS")
+Rel(NewCustomer, Website, "Заявка")
+Rel(Website, CallCenter, "Лид")
+Rel(ExistingCustomer, IB, "Заявка")
+Rel(IB, CoreBank, "Заявка")
+Rel(CoreBank, SMSGateway, "SMS")
+Rel(IB, SMSGateway, "OTP")
+Rel(BackOffice, CoreBank, "Подтверждение")
+Rel(CallOperator, CallCenter, "Работа с лидами")
+Rel(SMSGateway, Telecom, "Передача SMS")
+
+Lay_R(Website, IB)
+Lay_R(IB, CoreBank)
+Lay_R(SMSGateway, Telecom)
+Lay_D(CallCenter, Website)
+Lay_D(SMSGateway, CoreBank)
+Lay_D(NewCustomer, Website)
+Lay_D(ExistingCustomer, IB)
+Lay_D(BackOffice, CoreBank)
+@enduml
+

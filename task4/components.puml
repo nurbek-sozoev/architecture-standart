@@ -1,0 +1,40 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_LEFT_RIGHT()
+
+title Компоненты: Ставки для кол-центров (MVP)
+
+Person(BackOffice, "Бэк-офис депозитов")
+Person(CallOp, "Оператор кол-центра банка")
+Person_Ext(PartnerOp, "Оператор партнёрского кол-центра")
+
+System_Boundary(Bank, "АБС") {
+  System_Boundary(PriceSvc, "Сервис ставок") {
+    Container(PriceAPI, "Price API", "Java/.NET", "REST Read, кэширование")
+    Container(PriceCache, "Price Cache", "Redis/Memory", "Кэш актуальных ставок")
+    ContainerDb(PriceDB, "Price DB", "MS SQL/Oracle", "Структурированное хранилище ставок")
+    Container(ImportXLS, "XLS Importer", "Job", "Импорт из XLS, валидация, версии")
+    Rel(PriceAPI, PriceCache, "READ")
+    Rel_Back(PriceCache, PriceDB, "Refresh")
+    Rel(ImportXLS, PriceDB, "WRITE")
+    Container(Exporter, "Exporter", "Job", "Формирование CSV/XLSX, шифрование")
+  }
+  System_Boundary(CallCenterSystem, "Call-center system") {
+    Container(CallCenter, "Call-center UI", "Web", "Экран ставок для операторов")
+  }
+}
+
+System_Ext(PartnerCC, "Партнёрский CC", "Внешняя система")
+
+Rel(BackOffice, ImportXLS, "Загрузка XLS/утверждение")
+Rel(CallOp, CallCenter, "Просмотр ставок")
+Rel(CallCenter, PriceAPI, "GET /rates", "HTTPS/TLS")
+Rel(PriceAPI, PriceDB, "READ")
+Rel(Exporter, PriceDB, "READ")
+Rel(Exporter, PartnerCC, "Отправка файла ставок (защищённо)")
+Rel(PartnerOp, PartnerCC, "Просмотр ставок")
+
+@enduml
+
+
